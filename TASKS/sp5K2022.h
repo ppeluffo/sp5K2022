@@ -29,9 +29,12 @@
 #include "frtos_cmd.h"
 #include "frtos-io.h"
 #include "xprintf.h"
+#include "eeprom.h"
+#include "ads7828.h"
+#include "mcp23008.h"
 
 #define FW_REV "1.0.0"
-#define FW_DATE "@ 20220727"
+#define FW_DATE "@ 20220802"
 #define HW_MODELO "SP5K2022 FRTOS R001 HW:AVRMEGA1284P"
 #define FRTOS_VERSION "FW:FreeRTOS V202111.00"
 

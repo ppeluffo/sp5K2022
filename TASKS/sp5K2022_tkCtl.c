@@ -20,6 +20,10 @@ void tkCtl(void * pvParameters)
 	vTaskDelay( ( TickType_t)( 500 / portTICK_PERIOD_MS ) );
 
 	LED_init();
+	MCP0_init();
+	MCP1_init();
+
+	xprintf("Starting tkCtl...\r\n");
 
 	starting_flag = true;
 

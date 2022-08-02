@@ -24,7 +24,7 @@
 #define ACK 	0
 #define NACK 	1
 
-#define DEBUG_I2C false
+bool f_debugBusI2C;
 
 #define I2C_WRITE 0
 #define I2C_READ 1
@@ -41,8 +41,10 @@ typedef enum TWIM_RESULT_enum {
 	TWIM_RESULT_TIMEOUT          = (0x07<<0),
 } TWIM_RESULT_t;
 
+
 int16_t drv_I2C_master_write ( const uint8_t devAddress, const uint16_t dataAddress, const uint8_t dataAddressLength, char *pvBuffer, size_t xBytes );
 int16_t drv_I2C_master_read ( const uint8_t devAddress, const uint16_t dataAddress, const uint8_t dataAddressLength, char *pvBuffer, size_t xBytes );
 void drv_I2C_init(void);
+void drv_I2C_configDebugFlag(bool f_debug);
 
 #endif /* SRC_SPX_DRIVERS_DRV_I2C_SPX_H_ */

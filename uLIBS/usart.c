@@ -6,6 +6,7 @@
  */ 
 
 #include "usart.h"
+#include "avrlibdefs.h"
 
 
 // ---------------------------------------------------------------
@@ -16,12 +17,17 @@ void USART0_init(void)
 uint16_t bauddiv;
 
 	/* Set the baud rate.9600 */
-	bauddiv = ((F_CPU+(UART0_DEFAULT_BAUD_RATE*8L))/(UART0_DEFAULT_BAUD_RATE*16L)-1);
-	UBRR0L = bauddiv;
-	UBRR0H = bauddiv>>8;
+	//bauddiv = ((F_CPU+(UART0_DEFAULT_BAUD_RATE*8L))/(UART0_DEFAULT_BAUD_RATE*16L)-1);
+	bauddiv = 51;
+	//UBRR0L = bauddiv;
+	//UBRR0H = bauddiv>>8;
+	outb(UBRR0L, bauddiv);
+	outb(UBRR0H, bauddiv>>8);
 	
 	// enable RxD/TxD and interrupts
-	UCSR0B = ( 1 << RXCIE0) | ( 1 << RXEN0 ) | ( 1 << TXEN0 );
+	//UCSR0B = ( 1 << RXCIE0) | ( 1 << RXEN0 ) | ( 1 << TXEN0 );
+	//UCSR0B |= BV(RXCIE0)| BV(RXEN0)| BV(TXEN0);
+	outb(UCSR0B, BV(RXCIE0)| BV(RXEN0)|BV(TXEN0));
 
 	/* Set the data bits to 8N1. */
 	UCSR0C = ( serUCSRC_SELECT | serEIGHT_DATA_BITS );
@@ -78,12 +84,15 @@ void USART1_init(void)
 uint16_t bauddiv;
 
 	/* Set the baud rate.9600 */
-	bauddiv = ((F_CPU+(UART1_DEFAULT_BAUD_RATE*8L))/(UART1_DEFAULT_BAUD_RATE*16L)-1);
+	//bauddiv = ((F_CPU+(UART1_DEFAULT_BAUD_RATE*8L))/(UART1_DEFAULT_BAUD_RATE*16L)-1);
+	bauddiv = 51;
 	UBRR1L = bauddiv;
 	UBRR1H = bauddiv>>8;
 	
 	// enable RxD/TxD and interrupts
-	UCSR1B = ( 1 << RXCIE1) | ( 1 << RXEN1 ) | ( 1 << TXEN1 );
+	//UCSR1B = ( 1 << RXCIE1) | ( 1 << RXEN1 ) | ( 1 << TXEN1 );
+	//UCSR1B |= BV(RXCIE1)| BV(RXEN1)| BV(TXEN1);
+	outb(UCSR1B, BV(RXCIE1)| BV(RXEN1)|BV(TXEN1));
 
 	/* Set the data bits to 8N1. */
 	UCSR1C = ( serUCSRC_SELECT | serEIGHT_DATA_BITS );

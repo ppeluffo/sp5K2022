@@ -33,15 +33,20 @@ uint16_t i,j;
 				;
 
 	//----------------------------------------------------------------------------------------
+
+	frtos_open(fdI2C,100);
+
 	frtos_open(fdTERM, 9600 );
 	frtos_open(fdCOMMS, 9600 );
+	CONFIG_UARTCTL_ASOUTPUT();
+	ENABLE_UARTCTL();
 	XPRINTF_init();
 
     sem_SYSVars = xSemaphoreCreateMutexStatic( &SYSVARS_xMutexBuffer );
     starting_flag = false;
 
     xHandle_tkCtl = xTaskCreateStatic( tkCtl, "CTL", tkCtl_STACK_SIZE, (void *)1, tkCtl_TASK_PRIORITY, tkCtl_Buffer, &tkCtl_Buffer_Ptr );
-   // xHandle_tkCmd = xTaskCreateStatic( tkCmd, "CMD", tkCmd_STACK_SIZE, (void *)1, tkCmd_TASK_PRIORITY, tkCmd_Buffer, &tkCmd_Buffer_Ptr );
+    xHandle_tkCmd = xTaskCreateStatic( tkCmd, "CMD", tkCmd_STACK_SIZE, (void *)1, tkCmd_TASK_PRIORITY, tkCmd_Buffer, &tkCmd_Buffer_Ptr );
     xHandle_tkData = xTaskCreateStatic( tkData, "DATA", tkData_STACK_SIZE, (void *)1, tkData_TASK_PRIORITY, tkData_Buffer, &tkData_Buffer_Ptr );
 
     /* Arranco el RTOS. */

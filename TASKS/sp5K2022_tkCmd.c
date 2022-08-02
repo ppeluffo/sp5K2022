@@ -32,8 +32,6 @@ void tkCmd(void * pvParameters)
     while ( ! starting_flag )
         vTaskDelay( ( TickType_t)( 100 / portTICK_PERIOD_MS ) );
 
-	//vTaskDelay( ( TickType_t)( 500 / portTICK_PERIOD_MS ) );
-
 uint8_t c = 0;
 
     FRTOS_CMD_init();
@@ -113,24 +111,29 @@ static void cmdHelpFunction(void)
     FRTOS_CMD_makeArgv();
 
     if ( strcmp( strupr(argv[1]), "WRITE") == 0 ) {
-		xprintf("-write:\r\n");
+    	xprintf_P( PSTR("-write:\r\n"));
+		xprintf_P( PSTR("  ee {pos} {string}\r\n"));
+		xprintf_P( PSTR("  mcpled {on,off}\r\n"));
 
     }  else if ( strcmp( strupr(argv[1]), "CONFIG") == 0 ) {
-		xprintf("-config:\r\n");
+    	xprintf_P( PSTR("-config:\r\n"));
+    	xprintf_P( PSTR("  debugI2C {on,off}\r\n"));
 
     }  else if ( strcmp( strupr(argv[1]), "READ") == 0 ) {
-		xprintf("-read:\r\n");
+    	xprintf_P( PSTR("-read:\r\n"));
+		xprintf_P( PSTR("  ee {pos} {lenght}\r\n"));
+		xprintf_P( PSTR("  adc {ch}\r\n"));
 
     }  else {
         // HELP GENERAL
-        xprintf("Available commands are:\r\n");
-        xprintf("-cls\r\n");
-        xprintf("-help\r\n");
-        xprintf("-status\r\n");
-        xprintf("-reset\r\n");
-        xprintf("-write...\r\n");
-        xprintf("-config...\r\n");
-        xprintf("-read...\r\n");
+    	xprintf_P( PSTR("Available commands are:\r\n"));
+    	xprintf_P( PSTR("-cls\r\n"));
+    	xprintf_P( PSTR("-help\r\n"));
+    	xprintf_P( PSTR("-status\r\n"));
+    	xprintf_P( PSTR("-reset\r\n"));
+    	xprintf_P( PSTR("-write...\r\n"));
+    	xprintf_P( PSTR("-config...\r\n"));
+    	xprintf_P( PSTR("-read...\r\n"));
 
     }
 
@@ -164,6 +167,28 @@ static void cmdWriteFunction(void)
 
     FRTOS_CMD_makeArgv();
 
+    // MCPLED
+    // write mcpled {on,off}
+	if (!strcmp_P( strupr(argv[1]), PSTR("MCPLED")) ) {
+		if (!strcmp_P( strupr(argv[2]), PSTR("ON")) ) {
+			MCP_setLed() ? pv_snprintfP_OK(): pv_snprintfP_ERR();
+			return;
+		}
+		if (!strcmp_P( strupr(argv[2]), PSTR("OFF")) ) {
+			MCP_clearLed() ? pv_snprintfP_OK(): pv_snprintfP_ERR();
+			return;
+		}
+		pv_snprintfP_ERR();
+		return;
+	}
+
+	// EE
+	// write ee pos string
+	if ((strcmp_P( strupr(argv[1]), PSTR("EE\0")) == 0) ) {
+		( EE_test_write ( argv[2], argv[3] ) > 0)?  pv_snprintfP_OK() : pv_snprintfP_ERR();
+		return;
+	}
+
     // CMD NOT FOUND
 	xprintf("ERROR\r\nCMD NOT DEFINED\r\n\0");
 	pv_snprintfP_ERR();
@@ -177,6 +202,21 @@ static void cmdReadFunction(void)
 
     FRTOS_CMD_makeArgv();
 
+	// ADC
+	// read adc channel
+	if (!strcmp_P( strupr(argv[1]), PSTR("ADC\0")) ) {
+		ADC7828_test_read ( argv[2] ) ? pv_snprintfP_OK() : pv_snprintfP_ERR();
+		return;
+	}
+
+	// EE
+	// read ee address length
+	if (!strcmp_P( strupr(argv[1]), PSTR("EE\0")) ) {
+		EE_test_read ( argv[2], argv[3] );
+		pv_snprintfP_OK();
+		return;
+	}
+
     // CMD NOT FOUND
 	xprintf("ERROR\r\nCMD NOT DEFINED\r\n\0");
 	return;
@@ -187,6 +227,22 @@ static void cmdConfigFunction(void)
 {
 
     FRTOS_CMD_makeArgv();
+
+	// config debugi2c on,off
+	if (!strcmp_P( strupr(argv[1]), PSTR("DEBUGI2C")) ) {
+		if (!strcmp_P( strupr(argv[2]), PSTR("ON")) ) {
+			frtos_ioctl(fdI2C, ioctl_I2C_SET_DEBUG, NULL );
+			pv_snprintfP_OK();
+			return;
+		}
+		if (!strcmp_P( strupr(argv[2]), PSTR("OFF")) ) {
+			frtos_ioctl(fdI2C, ioctl_I2C_CLEAR_DEBUG, NULL );
+			pv_snprintfP_OK();
+			return;
+		}
+		pv_snprintfP_ERR();
+		return;
+	}
 
     // CMD NOT FOUND
 	xprintf("ERROR\r\nCMD NOT DEFINED\r\n\0");

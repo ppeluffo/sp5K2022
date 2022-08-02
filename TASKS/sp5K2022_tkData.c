@@ -15,16 +15,19 @@ void tkData(void * pvParameters)
 	// Esta es la primer tarea que arranca.
 
 ( void ) pvParameters;
+//uint16_t count = 0;
 
 	while (! starting_flag )
 		vTaskDelay( ( TickType_t)( 100 / portTICK_PERIOD_MS ) );
 
+	xprintf("Starting tkData...\r\n");
 
 	for( ;; )
 	{
 		vTaskDelay( ( TickType_t)( 1000 / portTICK_PERIOD_MS ) );
-		xprintf("Prueba sp5K2022\r\n");
-		xfprintf(fdCOMMS, "Prueba sp5K2022\r\n");
+		//xprintf_P(PSTR("Prueba sp5K2022a %04d\r\n"), count++);
+		//xfprintf(fdCOMMS, "Prueba sp5K2022\r\n");
+
 
 	}
 }

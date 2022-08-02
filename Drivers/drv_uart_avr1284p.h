@@ -3,6 +3,11 @@
  *
  *  Created on: 8 dic. 2018
  *      Author: pablo
+ *
+ * EL driver de las UART es el que conoce de estas.
+ * Tiene 2 estructuras, una para c/uart y el define las funciones para manejarlas.
+ * Expone las mismas al FRTOS-IO.
+ *
  */
 
 #ifndef SRC_SPX_DRIVERS_DRV_UART_SPX_H_
@@ -27,21 +32,32 @@
 //-----------------------------------------------------------------------
 #define UART0_TXSIZE	8	// trasmito por poleo. Si uso interrupcion lo subo a 128
 uint8_t uart0_txBuffer[UART0_TXSIZE];
-
 #define UART0_RXSIZE	64	// 
 uint8_t uart0_rxBuffer[UART0_RXSIZE];
         
 #define UART1_TXSIZE	8	// trasmito por poleo. Si uso interrupcion lo subo a 128
 uint8_t uart1_txBuffer[UART1_TXSIZE];
-
 #define UART1_RXSIZE	64	// 
 uint8_t uart1_rxBuffer[UART1_RXSIZE];
 
-rBchar_s TXRB_uart0, RXRB_uart0;
-rBchar_s TXRB_uart1, RXRB_uart1;
+// Estructura generica de una UART
+typedef struct {
+	rBchar_s TXringBuffer;	// ringbuffer de trasmision
+	rBchar_s RXringBuffer;	// ringbuffer de recepcion.
+} uart_control_t;
 
-void drv_uart0_init(uint32_t baudrate );
-void drv_uart1_init(uint32_t baudrate );
+// Creo las uart's en memoria.
+uart_control_t uart0, uart1;
+
+
+void drv_uart_init0(uint32_t baudrate );
+void drv_uart_init1(uint32_t baudrate );
+int16_t drv_uart_write0( const char *pvBuffer, const uint16_t xBytes );
+int16_t drv_uart_write1( const char *pvBuffer, const uint16_t xBytes );
+int16_t drv_uart_read0( char *pvBuffer, uint16_t xBytes );
+int16_t drv_uart_read1( char *pvBuffer, uint16_t xBytes );
+
+
 
 //-----------------------------------------------------------------------
 

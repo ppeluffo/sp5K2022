@@ -6,7 +6,7 @@
  */
 
 #include "frtos-io.h"
-
+#include "iopines.h"
 
 //------------------------------------------------------------------------------------
 int16_t frtos_open( file_descriptor_t fd, uint32_t flags)
@@ -21,15 +21,20 @@ int16_t xRet = -1;
 	switch(fd) {
         
 	case fdTERM:
-		frtos_open_uart0( flags );
+		drv_uart_init1 ( flags );
         xRet=0;
 		break;
 
 	case fdCOMMS:
-		frtos_open_uart1( flags );
+		drv_uart_init0 ( flags );
         xRet=0;
 		break;
-        
+
+	case fdI2C:
+		// En este caso usamos el periferico_i2c_port_t como paso intermedio antes de acceder al driver.
+		xRet = frtos_open_i2c( &xBusI2C, fd, &I2C_xMutexBuffer, flags );
+		break;
+
 	default:
 		break;
 	}
@@ -45,13 +50,17 @@ int16_t xRet = -1;
 
 	switch(fd) {
 	case fdTERM:
-		xRet = frtos_ioctl_uart0( ulRequest, pvValue );
+		xRet = frtos_ioctl_uart1( ulRequest, pvValue );
 		break;
 
 	case fdCOMMS:
-		xRet = frtos_ioctl_uart1( ulRequest, pvValue );
+		xRet = frtos_ioctl_uart0( ulRequest, pvValue );
 		break;
-        
+
+	case fdI2C:
+		xRet = frtos_ioctl_i2c( &xBusI2C, ulRequest, pvValue );
+		break;
+
 	default:
 		break;
 	}
@@ -67,11 +76,16 @@ int16_t xRet = -1;
 	switch(fd) {
         
 	case fdTERM:
-        xRet = frtos_uart0_write( pvBuffer, xBytes );
+        xRet = drv_uart_write1 ( pvBuffer, xBytes );
 		break;
 
 	case fdCOMMS:
-        xRet = frtos_uart1_write( pvBuffer, xBytes );
+        xRet = drv_uart_write0 (pvBuffer, xBytes );
+		break;
+
+		// En este caso usamos el periferico_i2c_port_t como paso intermedio antes de acceder al driver.
+	case fdI2C:
+		xRet = frtos_write_i2c( &xBusI2C, pvBuffer, xBytes );
 		break;
 
 	default:
@@ -88,13 +102,18 @@ int16_t xRet = -1;
 
 	switch(fd) {
 	case fdTERM:
-		xRet = frtos_read_uart0( pvBuffer, xBytes );
+		xRet = drv_uart_read1 ( pvBuffer, xBytes );
 		break;
 
 	case fdCOMMS:
-		xRet = frtos_read_uart1( pvBuffer, xBytes );
+		xRet = drv_uart_read0 ( pvBuffer, xBytes );
 		break;
-        
+
+	// En este caso usamos el periferico_i2c_port_t como paso intermedio antes de acceder al driver.
+	case fdI2C:
+		xRet = frtos_read_i2c( &xBusI2C, pvBuffer, xBytes );
+		break;
+
 	default:
 		break;
 	}
@@ -103,50 +122,7 @@ int16_t xRet = -1;
 }
 //------------------------------------------------------------------------------
 // FUNCIONES ESPECIFICAS DE UART's
-
 //------------------------------------------------------------------------------
-void frtos_open_uart0(uint32_t baudrate)
-{
-    drv_uart0_init(baudrate);
-}
-//------------------------------------------------------------------------------
-void frtos_open_uart1(uint32_t baudrate)
-{
-    drv_uart1_init(baudrate);
-}
-//------------------------------------------------------------------------------
-int16_t frtos_uart0_write( const char *pvBuffer, const uint16_t xBytes )
-{
-    
-uint16_t i;
-    
-    // Transmision x poleo ( No hablito al INT x DRIE )
-    //for( i = 0; i < strlen(pvBuffer); i++) {
-    for( i = 0; i < xBytes; i++) {
-    	while ( !( UCSR0A & (1<<UDRE0)) )
-    		taskYIELD();
-    	UDR0 = pvBuffer[i];
-    }
-    vTaskDelay( ( TickType_t)( 1 ) );
-    return(xBytes);   
-}
-//-------------------------------------------------------------------------------
-int16_t frtos_uart1_write( const char *pvBuffer, const uint16_t xBytes )
-{
-    
-uint16_t i;
-    
-    // Transmision x poleo ( No hablito al INT x DRIE )
-    //for( i = 0; i < strlen(pvBuffer); i++) {
-    for( i = 0; i < xBytes; i++) {
-    	while ( !( UCSR1A & (1<<UDRE1)) )
-    		taskYIELD();
-    	UDR1 = pvBuffer[i];
-    }
-    vTaskDelay( ( TickType_t)( 1 ) );
-    return(xBytes);   
-}
-//-------------------------------------------------------------------------------
 int16_t frtos_ioctl_uart0( uint32_t ulRequest, void *pvValue )
 {
 
@@ -155,7 +131,7 @@ int16_t xReturn = 0;
 	switch( ulRequest )
 	{
 		case ioctl_UART_CLEAR_TX_BUFFER:
-			rBchar_Flush(&TXRB_uart0);
+			rBchar_Flush( &uart0.TXringBuffer );
 			break;
 
 		default :
@@ -175,7 +151,7 @@ int16_t xReturn = 0;
 	switch( ulRequest )
 	{
 		case ioctl_UART_CLEAR_TX_BUFFER:
-			rBchar_Flush(&TXRB_uart1);
+			rBchar_Flush( &uart1.TXringBuffer );
 			break;
 
 		default :
@@ -187,89 +163,105 @@ int16_t xReturn = 0;
 
 }
 //------------------------------------------------------------------------------
-int16_t frtos_read_uart0( char *pvBuffer, uint16_t xBytes )
+// FUNCIONES ESPECIFICAS DEL BUS I2C/TWI
+//------------------------------------------------------------------------------------
+int16_t frtos_open_i2c( periferico_i2c_port_t *xI2c, file_descriptor_t fd, StaticSemaphore_t *i2c_semph, uint32_t flags)
 {
-	// Lee caracteres de la cola de recepcion y los deja en el buffer.
-	// El timeout lo fijo con ioctl.
+	// Asigno las funciones particulares ed write,read,ioctl
+	xI2c->fd = fd;
+	xI2c->xBusSemaphore = xSemaphoreCreateMutexStatic( i2c_semph );
+	xI2c->xBlockTime = (10 / portTICK_RATE_MS );
+	xI2c->i2c_error_code = I2C_OK;
+	//
+	// Abro e inicializo el puerto I2C solo la primera vez que soy invocado
+	drv_I2C_init();
 
-int16_t xBytesReceived = 0U;
-TickType_t xTicksToWait = 10;
-TimeOut_t xTimeOut;
+	return(1);
+}
+//------------------------------------------------------------------------------------
+int16_t frtos_write_i2c( periferico_i2c_port_t *xI2c, const char *pvBuffer, const uint16_t xBytes )
+{
 
-     /* Initialize xTimeOut.  This records the time at which this function was
-        entered. 
-      */
-	vTaskSetTimeOutState( &xTimeOut );
+int16_t xReturn = 0U;
 
-	// Are there any more bytes to be received?
-	while( xBytesReceived < xBytes )
-	{
+	if ( ( xReturn = drv_I2C_master_write ( xI2c->devAddress, xI2c->dataAddress, xI2c->dataAddressLength,  (char *)pvBuffer, xBytes) ) >= 0 ) {
+		xI2c->i2c_error_code = I2C_OK;
+	} else {
+		// Error de escritura indicado por el driver.
+		xI2c->i2c_error_code = I2C_WR_ERROR;
+	}
 
-        if( rBchar_Pop( &RXRB_uart0, &((char *)pvBuffer)[ xBytesReceived ] ) == true ) {
-			xBytesReceived++;
-            /*
-             Recibi un byte. Re-inicio el timeout.
-             */
-            vTaskSetTimeOutState( &xTimeOut );
-			//taskYIELD();
-            //vTaskDelay( ( TickType_t)( 1 ) );
-		} else {
-			// Espero xTicksToWait antes de volver a chequear
-			vTaskDelay( ( TickType_t)( 1 ) );
-
-            // Time out has expired ?
-            if( xTaskCheckForTimeOut( &xTimeOut, &xTicksToWait ) != pdFALSE )
-            {
-                break;
-            }
-        }
-
-    }
-
-	return ( xBytesReceived );
+	return(xReturn);
 
 }
-//------------------------------------------------------------------------------
-int16_t frtos_read_uart1( char *pvBuffer, uint16_t xBytes )
+//------------------------------------------------------------------------------------
+int16_t frtos_ioctl_i2c( periferico_i2c_port_t *xI2c, uint32_t ulRequest, void *pvValue )
 {
-	// Lee caracteres de la cola de recepcion y los deja en el buffer.
-	// El timeout lo fijo con ioctl.
 
-int16_t xBytesReceived = 0U;
-TickType_t xTicksToWait = 10;
-TimeOut_t xTimeOut;
+int16_t xReturn = 0;
+uint32_t *p = NULL;
 
-     /* Initialize xTimeOut.  This records the time at which this function was
-        entered. 
-      */
-	vTaskSetTimeOutState( &xTimeOut );
+	p = pvValue;
 
-	// Are there any more bytes to be received?
-	while( xBytesReceived < xBytes )
+	switch( ulRequest )
 	{
+		case ioctl_OBTAIN_BUS_SEMPH:
+			// Espero el semaforo en forma persistente.
+			while ( xSemaphoreTake(xI2c->xBusSemaphore, ( TickType_t ) 5 ) != pdTRUE ) {
+				//taskYIELD();
+				vTaskDelay( ( TickType_t)( 1 ) );
+			}
+			break;
+			case ioctl_RELEASE_BUS_SEMPH:
+				xSemaphoreGive( xI2c->xBusSemaphore );
+				break;
+			case ioctl_SET_TIMEOUT:
+				xI2c->xBlockTime = *p;
+				break;
+			case ioctl_I2C_SET_DEVADDRESS:
+				xI2c->devAddress = (int8_t)(*p);
+				break;
+			case ioctl_I2C_SET_DATAADDRESS:
+				xI2c->dataAddress = (uint16_t)(*p);
+				break;
+			case ioctl_I2C_SET_DATAADDRESSLENGTH:
+				xI2c->dataAddressLength = (int8_t)(*p);
+				break;
+			case ioctl_I2C_GET_LAST_ERROR:
+				xReturn = xI2c->i2c_error_code;
+				break;
+			case ioctl_I2C_SCAN:
+				//xReturn = drv_I2C_scan_device(xI2c->devAddress );
+				break;
+			case ioctl_I2C_SET_DEBUG:
+				drv_I2C_configDebugFlag(true);
+				break;
+			case ioctl_I2C_CLEAR_DEBUG:
+				drv_I2C_configDebugFlag(false);
+				break;
 
-        if( rBchar_Pop( &RXRB_uart1, &((char *)pvBuffer)[ xBytesReceived ] ) == true ) {
-			xBytesReceived++;
-            /*
-             Recibi un byte. Re-inicio el timeout.
-             */
-            vTaskSetTimeOutState( &xTimeOut );
-			//taskYIELD();
-            //vTaskDelay( ( TickType_t)( 1 ) );
-		} else {
-			// Espero xTicksToWait antes de volver a chequear
-			vTaskDelay( ( TickType_t)( 1 ) );
+			default :
+				xReturn = -1;
+				break;
+		}
 
-            // Time out has expired ?
-            if( xTaskCheckForTimeOut( &xTimeOut, &xTicksToWait ) != pdFALSE )
-            {
-                break;
-            }
-        }
-
-    }
-
-	return ( xBytesReceived );
+	return xReturn;
 
 }
-//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------
+int16_t frtos_read_i2c( periferico_i2c_port_t *xI2c, char *pvBuffer, const uint16_t xBytes )
+{
+
+int16_t xReturn = 0U;
+
+	if ( ( xReturn = drv_I2C_master_read (xI2c->devAddress, xI2c->dataAddress, xI2c->dataAddressLength,  (char *)pvBuffer, xBytes) ) >= 0 ) {
+		xI2c->i2c_error_code = I2C_OK;
+	} else {
+		// Error de escritura indicado por el driver.
+		xI2c->i2c_error_code = I2C_RD_ERROR;
+	}
+
+	return(xReturn);
+}
+//------------------------------------------------------------------------------------
+
