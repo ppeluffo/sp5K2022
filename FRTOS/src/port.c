@@ -37,8 +37,6 @@ Changes from V2.6.0
 
 #include <stdlib.h>
 #include <avr/interrupt.h>
-#include "avrlibdefs.h"
-#include "led.h"
 
 #include "FreeRTOS.h"
 #include "task.h"

@@ -7,6 +7,7 @@
 
 #include "frtos-io.h"
 #include "iopines.h"
+#include "xprintf.h"
 
 //------------------------------------------------------------------------------------
 int16_t frtos_open( file_descriptor_t fd, uint32_t flags)
@@ -182,15 +183,18 @@ int16_t frtos_open_i2c( periferico_i2c_port_t *xI2c, file_descriptor_t fd, Stati
 int16_t frtos_write_i2c( periferico_i2c_port_t *xI2c, const char *pvBuffer, const uint16_t xBytes )
 {
 
-int16_t xReturn = 0U;
+int16_t xReturn = -1;
 
-	if ( ( xReturn = drv_I2C_master_write ( xI2c->devAddress, xI2c->dataAddress, xI2c->dataAddressLength,  (char *)pvBuffer, xBytes) ) >= 0 ) {
+	xReturn = drv_I2C_master_write ( xI2c->devAddress, xI2c->dataAddress, xI2c->dataAddressLength,  (char *)pvBuffer, xBytes);
+
+	if ( xReturn >= 0 ) {
 		xI2c->i2c_error_code = I2C_OK;
 	} else {
 		// Error de escritura indicado por el driver.
 		xI2c->i2c_error_code = I2C_WR_ERROR;
 	}
 
+	//xprintf_P(PSTR("DEBUG frtos_write_i2c (%d)\r\n"),xReturn );
 	return(xReturn);
 
 }

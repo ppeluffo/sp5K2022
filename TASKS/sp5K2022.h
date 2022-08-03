@@ -23,6 +23,7 @@
 #include <avr/wdt.h>
 #include <avr/pgmspace.h>
 #include <avr/interrupt.h>
+#include <mcp.h>
 #include "stdbool.h"
 #include "stdlib.h"
 
@@ -31,7 +32,8 @@
 #include "xprintf.h"
 #include "eeprom.h"
 #include "ads7828.h"
-#include "mcp23008.h"
+#include "led.h"
+#include "iopines.h"
 
 #define FW_REV "1.0.0"
 #define FW_DATE "@ 20220802"

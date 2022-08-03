@@ -7,7 +7,7 @@
 
 
 #include "sp5K2022.h"
-#include "led.h"
+
 //------------------------------------------------------------------------------
 int main(void) {
 
@@ -35,13 +35,10 @@ uint16_t i,j;
 	//----------------------------------------------------------------------------------------
 
 	frtos_open(fdI2C,100);
-
 	frtos_open(fdTERM, 9600 );
 	frtos_open(fdCOMMS, 9600 );
-	CONFIG_UARTCTL_ASOUTPUT();
-	ENABLE_UARTCTL();
-	XPRINTF_init();
 
+	XPRINTF_init();
     sem_SYSVars = xSemaphoreCreateMutexStatic( &SYSVARS_xMutexBuffer );
     starting_flag = false;
 

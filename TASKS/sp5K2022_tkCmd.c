@@ -113,7 +113,9 @@ static void cmdHelpFunction(void)
     if ( strcmp( strupr(argv[1]), "WRITE") == 0 ) {
     	xprintf_P( PSTR("-write:\r\n"));
 		xprintf_P( PSTR("  ee {pos} {string}\r\n"));
-		xprintf_P( PSTR("  mcpled {on,off}\r\n"));
+		xprintf_P( PSTR("  led {d1,d2,d3} {on,off}\r\n"));
+		xprintf_P( PSTR("  pwrsensor {on,off}\r\n"));
+		xprintf_P( PSTR("  pwranalog {on,off}\r\n"));
 
     }  else if ( strcmp( strupr(argv[1]), "CONFIG") == 0 ) {
     	xprintf_P( PSTR("-config:\r\n"));
@@ -167,17 +169,84 @@ static void cmdWriteFunction(void)
 
     FRTOS_CMD_makeArgv();
 
-    // MCPLED
-    // write mcpled {on,off}
-	if (!strcmp_P( strupr(argv[1]), PSTR("MCPLED")) ) {
+    // PWRANALOG
+    // write pwranalog {on,off}
+	if (!strcmp_P( strupr(argv[1]), PSTR("PWRANALOG")) ) {
 		if (!strcmp_P( strupr(argv[2]), PSTR("ON")) ) {
-			MCP_setLed() ? pv_snprintfP_OK(): pv_snprintfP_ERR();
+			SET_OANALOG() ? pv_snprintfP_OK(): pv_snprintfP_ERR();
 			return;
 		}
 		if (!strcmp_P( strupr(argv[2]), PSTR("OFF")) ) {
-			MCP_clearLed() ? pv_snprintfP_OK(): pv_snprintfP_ERR();
+			CLEAR_OANALOG() ? pv_snprintfP_OK(): pv_snprintfP_ERR();
 			return;
 		}
+		pv_snprintfP_ERR();
+		return;
+	}
+
+    // PWRSENSOR
+    // write pwrsensor {on,off}
+	if (!strcmp_P( strupr(argv[1]), PSTR("PWRSENSOR")) ) {
+		if (!strcmp_P( strupr(argv[2]), PSTR("ON")) ) {
+			SET_OPWRSENSORS() ? pv_snprintfP_OK(): pv_snprintfP_ERR();
+			return;
+		}
+		if (!strcmp_P( strupr(argv[2]), PSTR("OFF")) ) {
+			CLEAR_OPWRSENSORS() ? pv_snprintfP_OK(): pv_snprintfP_ERR();
+			return;
+		}
+		pv_snprintfP_ERR();
+		return;
+	}
+
+    // LED
+    // write led {d1,d2,d3} {on,off}
+	if (!strcmp_P( strupr(argv[1]), PSTR("LED")) ) {
+		if (!strcmp_P( strupr(argv[2]), PSTR("D1")) ) {
+			if (!strcmp_P( strupr(argv[3]), PSTR("ON")) ) {
+				SET_LED_D1();
+				pv_snprintfP_OK();
+				return;
+			}
+			if (!strcmp_P( strupr(argv[3]), PSTR("OFF")) ) {
+				CLEAR_LED_D1();
+				pv_snprintfP_OK();
+				return;
+			}
+			pv_snprintfP_ERR();
+			return;
+		}
+
+		if (!strcmp_P( strupr(argv[2]), PSTR("D2")) ) {
+			if (!strcmp_P( strupr(argv[3]), PSTR("ON")) ) {
+				SET_LED_D2();
+				pv_snprintfP_OK();
+				return;
+			}
+			if (!strcmp_P( strupr(argv[3]), PSTR("OFF")) ) {
+				CLEAR_LED_D2();
+				pv_snprintfP_OK();
+				return;
+			}
+			pv_snprintfP_ERR();
+			return;
+		}
+
+		if (!strcmp_P( strupr(argv[2]), PSTR("D3")) ) {
+			if (!strcmp_P( strupr(argv[3]), PSTR("ON")) ) {
+				SET_LED_D3();
+				pv_snprintfP_OK();
+				return;
+			}
+			if (!strcmp_P( strupr(argv[3]), PSTR("OFF")) ) {
+				CLEAR_LED_D3();
+				pv_snprintfP_OK();
+				return;
+			}
+			pv_snprintfP_ERR();
+			return;
+		}
+
 		pv_snprintfP_ERR();
 		return;
 	}

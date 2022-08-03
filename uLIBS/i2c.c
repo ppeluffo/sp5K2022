@@ -63,7 +63,7 @@ int16_t I2C_write ( uint8_t i2c_bus_address, uint16_t data_address, uint8_t data
 
 //	xprintf_P(PSTR("DEBUG:I2C_write: i2c_bus_address=0x%02x, data_address=0x%02x, data_address_length=0x%02x, length=0x%02x\r\n"), i2c_bus_address, data_address, data_address_length, length);
 
-int16_t xReturn = 0U;
+int16_t xReturn = -1;
 uint8_t i2c_error_code = 0;
 
 	// 1) Indicamos el periferico i2c en el cual queremos escribir ( variable de 8 bits !!! )
@@ -75,6 +75,7 @@ uint8_t i2c_error_code = 0;
 
 	// 3) Por ultimo escribimos. No controlo fronteras.
 	xReturn = frtos_write(fdI2C, data, length);
+	//xprintf_P(PSTR("DEBUG I2C_write (%d)\r\n"),xReturn );
 
 	// 4) Controlo errores
 	i2c_error_code = frtos_ioctl(fdI2C, ioctl_I2C_GET_LAST_ERROR, NULL );

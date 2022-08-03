@@ -107,7 +107,7 @@ int16_t drv_I2C_master_write ( const uint8_t devAddress, const uint16_t dataAddr
 	pv_I2C_sendStop();
 
 
-	xprintf_PD( f_debugBusI2C, PSTR("I2C: drv_I2C_master_write: EXIT\r\n"));
+	xprintf_PD( f_debugBusI2C, PSTR("I2C: drv_I2C_master_write: EXIT (%d)\r\n"), xBytes);
 	return(xBytes);
 
 }
@@ -341,7 +341,7 @@ bool retS;
 	for ( bytesWritten=0; bytesWritten < bytesToWrite; bytesWritten++ ) {
 
 		txData = *wrBuffer++;
-		xprintf_PD( f_debugBusI2C, PSTR("I2C: pv_I2C_send_data: 0x%02x (%c)\r\n"),txData,txData );
+		xprintf_PD( f_debugBusI2C, PSTR("I2C: pv_I2C_send_data: 0x%02x\r\n"),txData );
 		if ( ! pv_I2C_writeByte(txData)) {
 			goto quit;
 		}

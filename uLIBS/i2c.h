@@ -13,10 +13,11 @@
 #include "xprintf.h"
 #include "avr/pgmspace.h"
 
-#define BUSADDR_EEPROM	0xA0
-#define BUSADDR_ADS7828	0x90
-#define BUSADDR_MCP0	0x40
-#define BUSADDR_MCP1	0x42
+#define BUSADDR_EEPROM		0xA0
+#define BUSADDR_ADS7828		0x90
+#define BUSADDR_MCP23008A	0x40
+//#define BUSADDR_MCP23008B	0x42
+#define BUSADDR_MCP23018	0x4E
 
 int16_t I2C_read ( uint8_t i2c_bus_address, uint16_t data_address, uint8_t data_address_length, char *data, uint8_t length );
 int16_t I2C_write ( uint8_t i2c_bus_address, uint16_t data_address, uint8_t data_address_length, char *data, uint8_t length );
