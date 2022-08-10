@@ -25,4 +25,17 @@ void TICK_flash(void)
 	CLEAR_TICK();
 }
 // ---------------------------------------------------------------
-
+void LATCH0_CLR_init(void)
+{
+	// Configura el pin como output ( 1 en DDR )
+	LATCH0_CLR_DDR |= LATCH0_CLR_bm;
+	CLEAR_LATCH0_CLR();
+}
+// ---------------------------------------------------------------
+void LATCH1_CLR_init(void)
+{
+	// Configura el pin como output ( 1 en DDR )
+	LATCH1_CLR_DDR |= LATCH1_CLR_bm;
+	CLEAR_LATCH1_CLR();
+}
+// ---------------------------------------------------------------

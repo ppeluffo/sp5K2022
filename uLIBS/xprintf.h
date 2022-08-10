@@ -19,6 +19,8 @@ void XPRINTF_init(void);
 int xprintf( const char *fmt, ...);
 int xprintf_P( PGM_P fmt, ...);
 int xfprintf( int fd, const char *fmt, ...);
+int xfprintf_P( int fd, PGM_P fmt, ...);
+
 void xputChar(unsigned char c);
 int xputs( const char *str );
 int xprintf_PD( bool dflag,  PGM_P fmt, ...);

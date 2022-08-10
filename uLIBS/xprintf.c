@@ -104,6 +104,28 @@ int i = -1;
 
 }
 //------------------------------------------------------------------------------
+int xfprintf_P( int fd, PGM_P fmt, ...)
+{
+	// Idem que xprintf_P pero imprime sobre el descriptor tipo uart indicado con fd.
+
+va_list args;
+int i;
+
+	// Espero el semaforo del buffer en forma persistente.
+	while ( xSemaphoreTake( sem_STDOUT, ( TickType_t ) 5 ) != pdTRUE )
+		vTaskDelay( ( TickType_t)( 5 ) );
+
+	// Ahora tengo en stdout_buff formateado para imprimir
+	memset(stdout_buff,'\0',PRINTF_BUFFER_SIZE);
+	va_start(args, fmt);
+	vsnprintf_P( (char *)stdout_buff,sizeof(stdout_buff),fmt,args);
+	i = frtos_write(fd, (char *)stdout_buff, strlen((char *)stdout_buff) );
+
+	xSemaphoreGive( sem_STDOUT );
+	return(i);
+
+}
+//-----------------------------------------------------------------------------------
 int xputs( const char *str )
 {
  

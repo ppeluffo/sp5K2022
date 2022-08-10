@@ -32,6 +32,33 @@ void TICK_init(void);
 void TICK_flash(void);
 
 //------------------------------------------------------------------------------
+// PA2 y PA3 son los que actuan sobre el CLR de los latches de las entradas digitales
+
+#define LATCH0_CLR_PORT	PORTA
+#define LATCH0_CLR_DDR	DDRA
+#define LATCH0_CLR_PIN	PINA
+#define LATCH0_CLR_BIT	2
+
+#define LATCH0_CLR_bm  	(1<<LATCH0_CLR_BIT)
+#define LATCH0_CLR_bp   LATCH0_CLR__BIT
+
+#define SET_LATCH0_CLR() 		( LATCH0_CLR_PORT |= LATCH0_CLR_bm )
+#define CLEAR_LATCH0_CLR()  	( LATCH0_CLR_PORT &= ~LATCH0_CLR_bm )
+
+#define LATCH1_CLR_PORT	PORTA
+#define LATCH1_CLR_DDR	DDRA
+#define LATCH1_CLR_PIN	PINA
+#define LATCH1_CLR_BIT	3
+
+#define LATCH1_CLR_bm  	(1<<LATCH1_CLR_BIT)
+#define LATCH1_CLR_bp   LATCH1_CLR__BIT
+
+#define SET_LATCH1_CLR() 		( LATCH1_CLR_PORT |= LATCH1_CLR_bm )
+#define CLEAR_LATCH1_CLR()  	( LATCH1_CLR_PORT &= ~LATCH1_CLR_bm )
+
+void LATCH0_CLR_init(void);
+void LATCH1_CLR_init(void);
+//------------------------------------------------------------------------------
 // UARTCTL es el pin que maneja el driver LM365 de las 2 uarts
 
 #define UARTCTL_PORT	PORTD

@@ -7,6 +7,7 @@
 
 
 #include "ads7828.h"
+#include "mcp.h"
 
 //------------------------------------------------------------------------------------
 int16_t ADS7828_rawRead( uint8_t cmdByte , char *data )
@@ -19,6 +20,11 @@ int16_t ADS7828_rawRead( uint8_t cmdByte , char *data )
 
 int16_t rcode = -1;
 uint16_t data_address = cmdByte;
+
+	// Si no pude inicializar el MCP1 no puedo prender los sensores ni el analog
+	if ( MCP1_status == false) {
+		return(-1);
+	}
 
 	I2C_get_semaphore();
 

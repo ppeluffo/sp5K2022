@@ -112,19 +112,32 @@ static void cmdHelpFunction(void)
 
     if ( strcmp( strupr(argv[1]), "WRITE") == 0 ) {
     	xprintf_P( PSTR("-write:\r\n"));
-		xprintf_P( PSTR("  ee {pos} {string}\r\n"));
+		xprintf_P( PSTR("  ee,iee {pos} {string}\r\n"));
 		xprintf_P( PSTR("  led {d1,d2,d3} {on,off}\r\n"));
 		xprintf_P( PSTR("  pwrsensor {on,off}\r\n"));
 		xprintf_P( PSTR("  pwranalog {on,off}\r\n"));
+		xprintf_P( PSTR("  pwrmodbus {on,off}\r\n"));
+		xprintf_P( PSTR("  rts {on,off}\r\n"));
+		xprintf_P( PSTR("  mcp1 {reg} {val}\r\n"));
+		xprintf_P( PSTR("  latchpulse\r\n"));
 
     }  else if ( strcmp( strupr(argv[1]), "CONFIG") == 0 ) {
     	xprintf_P( PSTR("-config:\r\n"));
-    	xprintf_P( PSTR("  debugI2C {on,off}\r\n"));
+    	xprintf_P( PSTR("  debugI2C, debugDIN {on,off}\r\n"));
+    	xprintf_P( PSTR("  timerpoll {secs}\r\n"));
+    	xprintf_P( PSTR("  load,save,default\r\n"));
 
     }  else if ( strcmp( strupr(argv[1]), "READ") == 0 ) {
     	xprintf_P( PSTR("-read:\r\n"));
-		xprintf_P( PSTR("  ee {pos} {lenght}\r\n"));
+		xprintf_P( PSTR("  ee,iee {pos} {lenght}\r\n"));
 		xprintf_P( PSTR("  adc {ch}\r\n"));
+		xprintf_P( PSTR("  mcp1 {reg}\r\n"));
+		xprintf_P( PSTR("  dinputs {clear}\r\n"));
+		xprintf_P( PSTR("  data\r\n"));
+
+    }  else if ( strcmp( strupr(argv[1]), "RESET") == 0 ) {
+    	xprintf_P( PSTR("-reset:\r\n"));
+		xprintf_P( PSTR("  mcp0, mcp1\r\n"));
 
     }  else {
         // HELP GENERAL
@@ -151,6 +164,18 @@ static void cmdClsFunction(void)
 //------------------------------------------------------------------------------
 static void cmdResetFunction(void)
 {
+	FRTOS_CMD_makeArgv();
+
+	if (!strcmp_P( strupr(argv[1]), PSTR("MCP0")) ) {
+		MCP0_init() ? pv_snprintfP_OK(): pv_snprintfP_ERR();
+		return;
+	}
+
+	if (!strcmp_P( strupr(argv[1]), PSTR("MCP1")) ) {
+		MCP1_init() ? pv_snprintfP_OK(): pv_snprintfP_ERR();
+		return;
+	}
+
     xprintf("Reset..\r\n");
     reset();
 }
@@ -160,14 +185,76 @@ static void cmdStatusFunction(void)
 
     // https://stackoverflow.com/questions/12844117/printing-defined-constants
 
-    xprintf("Spymovil %s %s %s %s \r\n" , HW_MODELO, FRTOS_VERSION, FW_REV, FW_DATE);
+    xprintf_P(PSTR("Spymovil %s %s %s %s \r\n") , HW_MODELO, FRTOS_VERSION, FW_REV, FW_DATE);
+    xprintf_P(PSTR("Timerpoll: %d\r\n"), systemVars.timerpoll);
+    if ( MCP0_status ) {
+    	xprintf_P(PSTR("Mcp0: OK\r\n"));
+    } else {
+    	xprintf_P(PSTR("Mcp0: FAIL\r\n"));
+    }
+    if ( MCP1_status ) {
+    	xprintf_P(PSTR("Mcp1: OK\r\n"));
+    } else {
+    	xprintf_P(PSTR("Mcp1: FAIL\r\n"));
+    }
 
 }
 //------------------------------------------------------------------------------
 static void cmdWriteFunction(void)
 {
 
+uint8_t regAddress;
+uint8_t regValue;
+
     FRTOS_CMD_makeArgv();
+
+    // RTS
+    // write rts {on,off}
+	if (!strcmp_P( strupr(argv[1]), PSTR("RTS")) ) {
+		if (!strcmp_P( strupr(argv[2]), PSTR("ON")) ) {
+			SET_ORTS() ? pv_snprintfP_OK(): pv_snprintfP_ERR();
+			return;
+		}
+		if (!strcmp_P( strupr(argv[2]), PSTR("OFF")) ) {
+			CLEAR_ORTS() ? pv_snprintfP_OK(): pv_snprintfP_ERR();
+			return;
+		}
+		pv_snprintfP_ERR();
+		return;
+	}
+
+    // LATCHPULSE
+    // write latchpulse
+    if (!strcmp_P( strupr(argv[1]), PSTR("LATCHPULSE")) ) {
+    	clear_latches();
+    	pv_snprintfP_OK();
+    	return;
+
+    }
+    // MCP1
+    // write mcp1 {reg} {val}\r\n"));
+    if (!strcmp_P( strupr(argv[1]), PSTR("MCP1")) ) {
+    	regAddress = atoi(argv[2]);
+    	regValue = atoi(argv[3]);
+    	MCP_write( MCP1, regAddress, regValue ) ? pv_snprintfP_OK(): pv_snprintfP_ERR();
+    	return;
+    }
+
+    // PWRMODBUS
+    // write pwrmodbus {on,off}
+	if (!strcmp_P( strupr(argv[1]), PSTR("PWRMODBUS")) ) {
+		if (!strcmp_P( strupr(argv[2]), PSTR("ON")) ) {
+			SET_OPWRMODBUS() ? pv_snprintfP_OK(): pv_snprintfP_ERR();
+			return;
+		}
+		if (!strcmp_P( strupr(argv[2]), PSTR("OFF")) ) {
+			CLEAR_OPWRMODBUS() ? pv_snprintfP_OK(): pv_snprintfP_ERR();
+			return;
+		}
+		pv_snprintfP_ERR();
+		return;
+	}
+
 
     // PWRANALOG
     // write pwranalog {on,off}
@@ -258,6 +345,14 @@ static void cmdWriteFunction(void)
 		return;
 	}
 
+	// IEE
+	// write iee pos string
+	if ((strcmp_P( strupr(argv[1]), PSTR("IEE\0")) == 0) ) {
+		( IEE_test_write ( argv[2], argv[3] ) > 0)?  pv_snprintfP_OK() : pv_snprintfP_ERR();
+		return;
+	}
+
+
     // CMD NOT FOUND
 	xprintf("ERROR\r\nCMD NOT DEFINED\r\n\0");
 	pv_snprintfP_ERR();
@@ -269,7 +364,47 @@ static void cmdWriteFunction(void)
 static void cmdReadFunction(void)
 {
 
+uint8_t regAddress;
+uint8_t regValue;
+dinputs_t dinputs[2];
+
     FRTOS_CMD_makeArgv();
+
+    // DATA
+    // read data
+    if (!strcmp_P( strupr(argv[1]), PSTR("DATA")) ) {
+    	printData(fdTERM);
+    	pv_snprintfP_OK();
+    	return;
+    }
+
+    // DINPUTS
+    // read dinputs {clear}
+    if (!strcmp_P( strupr(argv[1]), PSTR("DINPUTS")) ) {
+    	if (!strcmp_P( strupr(argv[2]), PSTR("CLEAR")) ) {
+    		read_dinputs( dinputs, true );
+    	} else {
+    		read_dinputs( dinputs, false );
+    	}
+    	xprintf_P(PSTR("DINPUTS: din0: count=%d,dT=%d, din1: count=%d,dT=%d\r\n"), dinputs[0].pulse_counter, dinputs[0].pulse_width, dinputs[1].pulse_counter, dinputs[0].pulse_width );
+    	pv_snprintfP_OK();
+    	return;
+    }
+
+    // MCP1
+    // read  mcp1 {reg}
+    if (!strcmp_P( strupr(argv[1]), PSTR("MCP1")) ) {
+    	regAddress = atoi(argv[2]);
+    	if ( MCP_read( MCP1, regAddress, (char *)&regValue ) ) {
+    		xprintf_P(PSTR("MCP1: reg=0x%02x, value=0x%02x\r\n"), regAddress, regValue);
+    		pv_snprintfP_OK();
+    		return;
+    	} else {
+    		pv_snprintfP_ERR();
+    		return;
+    	}
+    	return;
+    }
 
 	// ADC
 	// read adc channel
@@ -286,6 +421,14 @@ static void cmdReadFunction(void)
 		return;
 	}
 
+	// IEE
+	// read iee address length
+	if (!strcmp_P( strupr(argv[1]), PSTR("IEE\0")) ) {
+		IEE_test_read ( argv[2], argv[3] );
+		pv_snprintfP_OK();
+		return;
+	}
+
     // CMD NOT FOUND
 	xprintf("ERROR\r\nCMD NOT DEFINED\r\n\0");
 	return;
@@ -295,7 +438,52 @@ static void cmdReadFunction(void)
 static void cmdConfigFunction(void)
 {
 
+
     FRTOS_CMD_makeArgv();
+
+    // config default
+	if (!strcmp_P( strupr(argv[1]), PSTR("DEFAULT")) ) {
+		load_defaults();
+		pv_snprintfP_OK();
+		return;
+	}
+
+    // config load
+	if (!strcmp_P( strupr(argv[1]), PSTR("LOAD")) ) {
+		load_systemVars();
+		pv_snprintfP_OK();
+		return;
+	}
+
+    // config save
+	if (!strcmp_P( strupr(argv[1]), PSTR("SAVE")) ) {
+		save_systemVars();
+		pv_snprintfP_OK();
+		return;
+	}
+
+	// config timerpoll
+	if (!strcmp_P( strupr(argv[1]), PSTR("TIMERPOLL")) ) {
+		systemVars.timerpoll = atoi(argv[2]);
+		pv_snprintfP_OK();
+		return;
+	}
+
+	// config debugDin on,off
+	if (!strcmp_P( strupr(argv[1]), PSTR("DEBUGDIN")) ) {
+		if (!strcmp_P( strupr(argv[2]), PSTR("ON")) ) {
+			config_debug_din(true);
+			pv_snprintfP_OK();
+			return;
+		}
+		if (!strcmp_P( strupr(argv[2]), PSTR("OFF")) ) {
+			config_debug_din(false);
+			pv_snprintfP_OK();
+			return;
+		}
+		pv_snprintfP_ERR();
+		return;
+	}
 
 	// config debugi2c on,off
 	if (!strcmp_P( strupr(argv[1]), PSTR("DEBUGI2C")) ) {

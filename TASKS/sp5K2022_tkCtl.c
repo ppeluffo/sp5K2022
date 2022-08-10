@@ -8,7 +8,9 @@
 
 #include "sp5K2022.h"
 
-void pv_flash_led(void);
+void pv_flash_led_D1(void);
+void pv_flash_led_D2(void);
+void pv_flash_led_D3(void);
 
 //------------------------------------------------------------------------------
 void tkCtl(void * pvParameters)
@@ -18,7 +20,7 @@ void tkCtl(void * pvParameters)
 
 ( void ) pvParameters;
 
-	vTaskDelay( ( TickType_t)( 500 / portTICK_PERIOD_MS ) );
+	vTaskDelay( ( TickType_t)( 1000 / portTICK_PERIOD_MS ) );
 
 	TICK_init();
 	CONFIG_UARTCTL_ASOUTPUT();
@@ -32,6 +34,10 @@ void tkCtl(void * pvParameters)
 	LED_D3_init();
 
 
+	if ( ! load_config()) {
+		load_defaults();
+	}
+
 	xprintf("Starting tkCtl...\r\n");
 
 	starting_flag = true;
@@ -40,13 +46,15 @@ void tkCtl(void * pvParameters)
 	{
 		wdt_reset();
 		vTaskDelay( ( TickType_t)( 1000 / portTICK_PERIOD_MS ) );
-		//TOGGLE_LED();
-		pv_flash_led();
+		TOGGLE_TICK();
+		//pv_flash_led_D1();	// Genera 'ruido' en el bus I2C para el debug
+		pv_flash_led_D2();
+		pv_flash_led_D3();
 
 	}
 }
 //------------------------------------------------------------------------------
-void pv_flash_led(void)
+void pv_flash_led_D1(void)
 {
 	/*
 	 * Cada 5s flashea el led de la placa logica
@@ -58,8 +66,37 @@ static uint8_t led_timer = 5;
 		return;
 
 	led_timer = 5;
-//	MCP_setLed();
-	vTaskDelay( ( TickType_t)( 50 / portTICK_PERIOD_MS ) );
-//	MCP_clearLed();
+	if ( MCP0_status)
+		LED_D1_flash();
+}
+//------------------------------------------------------------------------------
+void pv_flash_led_D2(void)
+{
+	/*
+	 * Cada 5s flashea el led D2 de la placa SPX_3CH
+	 */
+
+static uint8_t led_timer = 5;
+
+	if (led_timer-- > 0 )
+		return;
+
+	led_timer = 5;
+	LED_D2_flash();
+}
+//------------------------------------------------------------------------------
+void pv_flash_led_D3(void)
+{
+	/*
+	 * Cada 5s flashea el led D3 de la placa SPX_3CH
+	 */
+
+static uint8_t led_timer = 5;
+
+	if (led_timer-- > 0 )
+		return;
+
+	led_timer = 5;
+	LED_D3_flash();
 }
 //------------------------------------------------------------------------------

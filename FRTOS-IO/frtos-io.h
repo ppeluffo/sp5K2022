@@ -27,7 +27,7 @@
 #include <avr/interrupt.h>
 #include <drv_uart_avr1284p.h>
 #include <drv_i2c_avr1284p.h>
-
+#include <drv_iee_avr1284p.h>
 #include "FreeRTOS.h"
 #include "task.h"
 #include "semphr.h"
@@ -37,6 +37,7 @@ typedef enum {
 	fdTERM = 0,  
 	fdCOMMS,
 	fdI2C,
+	fdIEE,
 } file_descriptor_t;
 
 /*
@@ -72,6 +73,17 @@ typedef struct {
 periferico_i2c_port_t xBusI2C;
 StaticSemaphore_t I2C_xMutexBuffer;
 
+typedef struct {
+	file_descriptor_t fd;
+	SemaphoreHandle_t xBusSemaphore;		//
+	uint8_t xBlockTime;						// ticks to block in read operations. Set by ioctl
+	uint16_t ieeDataAddress;
+} periferico_iee_port_t;
+
+// Periferico EE real.
+periferico_iee_port_t xBusIEE;
+StaticSemaphore_t IEE_xMutexBuffer;
+
 
 #define ioctl_OBTAIN_BUS_SEMPH			1
 #define ioctl_RELEASE_BUS_SEMPH			2
@@ -88,15 +100,18 @@ StaticSemaphore_t I2C_xMutexBuffer;
 #define ioctl_UART_ENABLE_RX			12
 #define ioctl_UART_DISABLE_RX			13
 
-#define ioctl_I2C_SET_DEVADDRESS		14
+#define ioctl_I2C_SET_DEVADDRESS			14
 //#define ioctl_I2C_SET_DEVADDRESSLENGTH	15
-#define ioctl_I2C_SET_DATAADDRESS		16
-#define ioctl_I2C_SET_DATAADDRESSLENGTH	17
-#define ioctl_I2C_GET_LAST_ERROR		18
-#define ioctl_I2C_SCAN					19
-#define ioctl_I2C_SET_DEBUG				20
-#define ioctl_I2C_CLEAR_DEBUG           21
-#define ioctl_I2C_RESET                 22
+#define ioctl_I2C_SET_DATAADDRESS			16
+#define ioctl_I2C_SET_DATAADDRESSLENGTH		17
+#define ioctl_I2C_GET_LAST_ERROR			18
+#define ioctl_I2C_SCAN						19
+#define ioctl_I2C_SET_DEBUG					20
+#define ioctl_I2C_CLEAR_DEBUG           	21
+#define ioctl_I2C_RESET                 	22
+
+#define ioctl_IEE_SET_EEVADDRESS			23
+
 
 #define I2C_OK			0
 #define I2C_RD_ERROR	1
@@ -118,5 +133,10 @@ int16_t frtos_write_i2c( periferico_i2c_port_t *xI2c, const char *pvBuffer, cons
 int16_t frtos_ioctl_i2c( periferico_i2c_port_t *xI2c, uint32_t ulRequest, void *pvValue );
 int16_t frtos_read_i2c( periferico_i2c_port_t *xI2c, char *pvBuffer, const uint16_t xBytes );
 
+// EE interna
+int16_t frtos_open_iee( periferico_iee_port_t *xIEEc, file_descriptor_t fd, StaticSemaphore_t *i2c_semph, uint32_t flags);
+int16_t frtos_write_iee( periferico_iee_port_t *xIEEc, const char *pvBuffer, const uint16_t xBytes );
+int16_t frtos_ioctl_iee( periferico_iee_port_t *xIEEc, uint32_t ulRequest, void *pvValue );
+int16_t frtos_read_iee( periferico_iee_port_t *xIEEc, char *pvBuffer, const uint16_t xBytes );
 
 #endif /* SRC_FRTOS_IO_FRTOS_IO_H_ */

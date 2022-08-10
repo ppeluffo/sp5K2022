@@ -5,6 +5,7 @@
 //------------------------------------------------------------------------------
 void LED_D1_init(void)
 {
+	// No requiere inicializacion porque esta en el MCP0
 
 }
 //------------------------------------------------------------------------------
@@ -51,7 +52,7 @@ void LED_D1_flash(void)
 {
 	// Prende el led 50ms y lo apaga
 	SET_LED_D1();
-	vTaskDelay( (TickType_t)( 100 / portTICK_PERIOD_MS ) );
+	vTaskDelay( (TickType_t)( 50 / portTICK_PERIOD_MS ) );
 	CLEAR_LED_D1();
 }
 // ---------------------------------------------------------------
@@ -59,29 +60,29 @@ void LED_D2_init(void)
 {
 	// Configura el pin del led como output ( 1 en DDR )
 	LED_D2_DDR |= LED_D2_bm;
-	CLEAR_LED_D2();
+	SET_LED_D2();
 }
 // ---------------------------------------------------------------
 void LED_D2_flash(void)
 {
 	// Prende el led 50ms y lo apaga
-	SET_LED_D2();
-	vTaskDelay( (TickType_t)( 100 / portTICK_PERIOD_MS ) );
 	CLEAR_LED_D2();
+	vTaskDelay( (TickType_t)( 50 / portTICK_PERIOD_MS ) );
+	SET_LED_D2();
 }
 // ---------------------------------------------------------------
 void LED_D3_init(void)
 {
 	// Configura el pin del led como output ( 1 en DDR )
 	LED_D3_DDR |= LED_D3_bm;
-	CLEAR_LED_D3();
+	SET_LED_D3();
 }
 // ---------------------------------------------------------------
 void LED_D3_flash(void)
 {
 	// Prende el led 50ms y lo apaga
-	SET_LED_D3();
-	vTaskDelay( (TickType_t)( 100 / portTICK_PERIOD_MS ) );
 	CLEAR_LED_D3();
+	vTaskDelay( (TickType_t)( 50 / portTICK_PERIOD_MS ) );
+	SET_LED_D3();
 }
 // ---------------------------------------------------------------

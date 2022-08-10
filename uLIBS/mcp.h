@@ -29,11 +29,12 @@
 #define MCP0_OLAT 		0x0A
 
 // Bits del MCP0
-#define MCP0_GPIO_IGPRSDCD			1	// IN
+#define MCP0_GPIO_ORTS				1	// IN ( en el plano original es el DCD )
+
 #define MCP0_GPIO_IGPRSRI			2	// IN
 #define MCP0_GPIO_OGPRSSW			3	// OUT
 #define MCP0_GPIO_OTERMPWR			4
-#define MCP0_GPIO_OGPRSPWR			5
+#define MCP0_GPIO_OMODBUSPWR		5
 #define MCP0_GPIO_OLED				6
 
 //------------------------------------------------------------------------------------
@@ -79,16 +80,29 @@
 #define MCP1_GPIO_DIN1					5	// IN
 #define MCP1_GPIO_PWRSENSORS			4	// OUT
 #define MCP1_GPIO_ANALOGPWR				7	// OUT
+
+
+#define DIN0_BIT	6
+#define DIN0_bm  	(1<<DIN0_BIT)
+#define DIN0_bp     DIN0_BIT
+
+#define DIN1_BIT	5
+#define DIN1_bm  	(1<<DIN1_BIT)
+#define DIN1_bp     DIN1_BIT
+
+
 //------------------------------------------------------------------------------------
 
 #define MCP0	0		// id del MCP de la Logic Board
 #define MCP1	1		// id del MCP de la data Board
 
+bool MCP0_status, MCP1_status;
+
 bool MCP_read ( uint8_t id, uint8_t regAddress, char *value );
 bool MCP_write ( uint8_t id, uint8_t regAddress, uint8_t value );
 
-void MCP0_init(void);
-void MCP1_init(void);
+bool MCP0_init(void);
+bool MCP1_init(void);
 
 bool SET_OPWRSENSORS(void);
 bool CLEAR_OPWRSENSORS(void);
@@ -96,5 +110,12 @@ bool CLEAR_OPWRSENSORS(void);
 bool SET_OANALOG(void);
 bool CLEAR_OANALOG(void);
 
+bool SET_ORTS(void);
+bool CLEAR_ORTS(void);
+
+bool SET_OPWRMODBUS(void);
+bool CLEAR_OPWRMODBUS(void);
+
+bool READ_DIGITAL_INPUTS( uint8_t *din0, uint8_t *din1 );
 
 #endif /* ULIBS_MCP_H_ */

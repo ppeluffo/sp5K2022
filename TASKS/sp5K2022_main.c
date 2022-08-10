@@ -3,6 +3,10 @@
  *
  *  Created on: 25 jul. 2022
  *      Author: pablo
+ *
+ *  Pendiente:
+ *  - watchdog
+ *
  */
 
 
@@ -37,6 +41,9 @@ uint16_t i,j;
 	frtos_open(fdI2C,100);
 	frtos_open(fdTERM, 9600 );
 	frtos_open(fdCOMMS, 9600 );
+	frtos_open(fdIEE, 0 );
+
+	tkRXComms_initoutofrtos();
 
 	XPRINTF_init();
     sem_SYSVars = xSemaphoreCreateMutexStatic( &SYSVARS_xMutexBuffer );
@@ -45,6 +52,8 @@ uint16_t i,j;
     xHandle_tkCtl = xTaskCreateStatic( tkCtl, "CTL", tkCtl_STACK_SIZE, (void *)1, tkCtl_TASK_PRIORITY, tkCtl_Buffer, &tkCtl_Buffer_Ptr );
     xHandle_tkCmd = xTaskCreateStatic( tkCmd, "CMD", tkCmd_STACK_SIZE, (void *)1, tkCmd_TASK_PRIORITY, tkCmd_Buffer, &tkCmd_Buffer_Ptr );
     xHandle_tkData = xTaskCreateStatic( tkData, "DATA", tkData_STACK_SIZE, (void *)1, tkData_TASK_PRIORITY, tkData_Buffer, &tkData_Buffer_Ptr );
+    xHandle_tkDinputs = xTaskCreateStatic( tkDinputs, "DIN", tkDinputs_STACK_SIZE, (void *)1, tkDinputs_TASK_PRIORITY, tkDinputs_Buffer, &tkDinputs_Buffer_Ptr );
+    xHandle_tkRXComms = xTaskCreateStatic( tkRXComms, "RXC", tkRXComms_STACK_SIZE, (void *)1, tkRXComms_TASK_PRIORITY, tkRXComms_Buffer, &tkRXComms_Buffer_Ptr );
 
     /* Arranco el RTOS. */
 	vTaskStartScheduler();
