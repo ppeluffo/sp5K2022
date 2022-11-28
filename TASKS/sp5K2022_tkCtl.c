@@ -33,6 +33,7 @@ void tkCtl(void * pvParameters)
 	LED_D2_init();
 	LED_D3_init();
 
+	systemVars.clock = 0;
 
 	if ( ! load_config()) {
 		load_defaults();
@@ -51,6 +52,10 @@ void tkCtl(void * pvParameters)
 		pv_flash_led_D2();
 		pv_flash_led_D3();
 
+		while ( xSemaphoreTake( sem_SYSVars, ( TickType_t ) 5 ) != pdTRUE )
+			;
+			systemVars.clock++;
+		xSemaphoreGive( sem_SYSVars );
 	}
 }
 //------------------------------------------------------------------------------

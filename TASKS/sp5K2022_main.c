@@ -52,7 +52,7 @@ uint16_t i,j;
     xHandle_tkCtl = xTaskCreateStatic( tkCtl, "CTL", tkCtl_STACK_SIZE, (void *)1, tkCtl_TASK_PRIORITY, tkCtl_Buffer, &tkCtl_Buffer_Ptr );
     xHandle_tkCmd = xTaskCreateStatic( tkCmd, "CMD", tkCmd_STACK_SIZE, (void *)1, tkCmd_TASK_PRIORITY, tkCmd_Buffer, &tkCmd_Buffer_Ptr );
     xHandle_tkData = xTaskCreateStatic( tkData, "DATA", tkData_STACK_SIZE, (void *)1, tkData_TASK_PRIORITY, tkData_Buffer, &tkData_Buffer_Ptr );
-    xHandle_tkDinputs = xTaskCreateStatic( tkDinputs, "DIN", tkDinputs_STACK_SIZE, (void *)1, tkDinputs_TASK_PRIORITY, tkDinputs_Buffer, &tkDinputs_Buffer_Ptr );
+    xHandle_tkCounters = xTaskCreateStatic( tkCounters, "CNT", tkCounters_STACK_SIZE, (void *)1, tkCounters_TASK_PRIORITY, tkCounters_Buffer, &tkCounters_Buffer_Ptr );
     xHandle_tkRXComms = xTaskCreateStatic( tkRXComms, "RXC", tkRXComms_STACK_SIZE, (void *)1, tkRXComms_TASK_PRIORITY, tkRXComms_Buffer, &tkRXComms_Buffer_Ptr );
 
     /* Arranco el RTOS. */

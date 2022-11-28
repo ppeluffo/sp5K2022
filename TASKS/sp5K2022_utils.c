@@ -48,6 +48,10 @@ void load_defaults(void)
 {
 	// Almacena un string de bytes en la eeprom interna del micro
 	systemVars.timerpoll = 60;
+	snprintf_P( systemVars.dlgid, PARAMNAME_LENGTH, PSTR("DEFAULT"));
+	load_analog_defaults();
+	load_counters_defaults();
+
 	xprintf("Loading defaults...\r\n");
 	return;
 }
@@ -106,9 +110,9 @@ bool load_config(void)
 uint8_t lcks, cks;
 
 	lcks = load_systemVars();
-	//xprintf_P(PSTR("Loaded cks: 0x%02x\r\n"), lcks );
+	xprintf_P(PSTR("Loaded cks: 0x%02x\r\n"), lcks );
 	cks = checksum( (uint8_t *)&systemVars, sizeof(systemVars) );
-	//xprintf_P(PSTR("Calculated cks: 0x%02x\r\n"), cks );
+	xprintf_P(PSTR("Calculated cks: 0x%02x\r\n"), cks );
 
 	if ( lcks == cks )
 		return (true);
@@ -117,4 +121,82 @@ uint8_t lcks, cks;
 
 }
 //------------------------------------------------------------------------------------
+void load_analog_defaults(void)
+{
 
+	// Realiza la configuracion por defecto de los canales analogicos.
+
+uint8_t channel;
+
+	for ( channel = 0; channel < ANALOG_CHANNELS; channel++) {
+		systemVars.ainputs[channel].imin = 0;
+		systemVars.ainputs[channel].imax = 20;
+		systemVars.ainputs[channel].mmin = 0;
+		systemVars.ainputs[channel].mmax = 10.0;
+		systemVars.ainputs[channel].offset = 0.0;
+		snprintf_P( systemVars.ainputs[channel].name, PARAMNAME_LENGTH, PSTR("P%d"),channel );
+
+	}
+}
+//------------------------------------------------------------------------------------
+void load_counters_defaults(void)
+{
+
+uint8_t channel;
+
+	for ( channel = 0; channel < COUNTER_CHANNELS; channel++) {
+		systemVars.counters[channel].magpp = 0.1;
+		snprintf_P( systemVars.counters[channel].name, PARAMNAME_LENGTH, PSTR("X") );
+	}
+
+}
+//------------------------------------------------------------------------------------
+bool config_analog_channel( uint8_t channel,char *s_name,char *s_imin,char *s_imax,char *s_mmin,char *s_mmax )
+{
+
+	// Configura los canales analogicos. Es usada tanto desde el modo comando como desde el modo online por gprs.
+
+bool retS = false;
+
+	while ( xSemaphoreTake( sem_SYSVars, ( TickType_t ) 5 ) != pdTRUE )
+		taskYIELD();
+
+	if ( ( channel >=  0) && ( channel < ANALOG_CHANNELS) ) {
+		if ( s_imin != NULL ) { systemVars.ainputs[channel].imin = atoi(s_imin); }
+		if ( s_imax != NULL ) { systemVars.ainputs[channel].imax = atoi(s_imax); }
+		if ( s_mmin != NULL ) { systemVars.ainputs[channel].mmin = atoi(s_mmin); }
+		if ( s_mmax != NULL ) { systemVars.ainputs[channel].mmax = atof(s_mmax); }
+		snprintf_P( systemVars.ainputs[channel].name, PARAMNAME_LENGTH, PSTR("%s\0"), s_name );
+		retS = true;
+	}
+
+	xSemaphoreGive( sem_SYSVars );
+	return(retS);
+}
+//------------------------------------------------------------------------------------
+bool config_counters_channel( uint8_t channel,char *s_name, char *s_magpp )
+{
+
+	// {0..1} dname magPP
+
+bool retS = false;
+
+	while ( xSemaphoreTake( sem_SYSVars, ( TickType_t ) 5 ) != pdTRUE )
+		taskYIELD();
+
+	if ( ( channel >=  0) && ( channel < COUNTER_CHANNELS ) ) {
+		// NOMBRE
+		snprintf_P( systemVars.counters[channel].name, PARAMNAME_LENGTH, PSTR("%s"), s_name );
+
+		// MAGPP
+		if ( s_magpp != NULL )
+			systemVars.counters[channel].magpp = atof(s_magpp);
+
+		retS = true;
+	}
+
+	xSemaphoreGive( sem_SYSVars );
+	return(retS);
+
+}
+//------------------------------------------------------------------------------------

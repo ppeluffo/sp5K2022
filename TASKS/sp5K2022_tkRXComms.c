@@ -60,7 +60,7 @@ uint16_t timeout;
 			// Hay datos en el buffer: imprimo y vacio el buffer.
 			//if ( strlen(buffer) > 0 ) {
 			if (ptr > 0 ) {
-				xprintf_P(PSTR("%s"), &buffer );
+				xprintf_P(PSTR("%s\r\n"), &buffer );
 				ptr = 0;
 				memset(buffer, '\0', RXBUFFER_SIZE );
 			}

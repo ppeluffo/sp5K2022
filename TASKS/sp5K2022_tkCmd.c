@@ -126,6 +126,8 @@ static void cmdHelpFunction(void)
     	xprintf_P( PSTR("  debugI2C, debugDIN {on,off}\r\n"));
     	xprintf_P( PSTR("  timerpoll {secs}\r\n"));
     	xprintf_P( PSTR("  load,save,default\r\n"));
+		xprintf_P( PSTR("  analog {0..%d} aname imin imax mmin mmax\r\n"),( ANALOG_CHANNELS - 1 ) );
+		xprintf_P( PSTR("  counter {0..%d} cname magpp\r\n"), ( COUNTER_CHANNELS - 1 ) );
 
     }  else if ( strcmp( strupr(argv[1]), "READ") == 0 ) {
     	xprintf_P( PSTR("-read:\r\n"));
@@ -185,8 +187,31 @@ static void cmdStatusFunction(void)
 
     // https://stackoverflow.com/questions/12844117/printing-defined-constants
 
+uint8_t channel;
+
     xprintf_P(PSTR("Spymovil %s %s %s %s \r\n") , HW_MODELO, FRTOS_VERSION, FW_REV, FW_DATE);
     xprintf_P(PSTR("Timerpoll: %d\r\n"), systemVars.timerpoll);
+	while ( xSemaphoreTake( sem_SYSVars, ( TickType_t ) 5 ) != pdTRUE )
+		;
+		xprintf_P(PSTR("Clock: %d\r\n"), systemVars.clock );
+	xSemaphoreGive( sem_SYSVars );
+	xprintf_P( PSTR("dlgid: %s\r\n\0"), systemVars.dlgid );
+
+	for ( channel = 0; channel < ANALOG_CHANNELS; channel++) {
+		xprintf_P( PSTR("  a%d [%d-%d mA, %.02f,%.02f, %s]\r\n"), channel,
+				systemVars.ainputs[channel].imin,
+				systemVars.ainputs[channel].imax,
+				systemVars.ainputs[channel].mmin,
+				systemVars.ainputs[channel].mmax,
+				systemVars.ainputs[channel].name );
+	}
+
+	for ( channel = 0; channel < COUNTER_CHANNELS; channel++) {
+		xprintf_P( PSTR("  c%d [%s | %.02f]\r\n\0"),channel,
+				systemVars.counters[channel].name,
+				systemVars.counters[channel].magpp );
+	}
+
     if ( MCP0_status ) {
     	xprintf_P(PSTR("Mcp0: OK\r\n"));
     } else {
@@ -366,7 +391,7 @@ static void cmdReadFunction(void)
 
 uint8_t regAddress;
 uint8_t regValue;
-dinputs_t dinputs[2];
+counters_t counters[2];
 
     FRTOS_CMD_makeArgv();
 
@@ -378,15 +403,15 @@ dinputs_t dinputs[2];
     	return;
     }
 
-    // DINPUTS
-    // read dinputs {clear}
-    if (!strcmp_P( strupr(argv[1]), PSTR("DINPUTS")) ) {
+    // COUNTERS
+    // read counters {clear}
+    if (!strcmp_P( strupr(argv[1]), PSTR("CONTERS")) ) {
     	if (!strcmp_P( strupr(argv[2]), PSTR("CLEAR")) ) {
-    		read_dinputs( dinputs, true );
+    		read_counters( counters, true );
     	} else {
-    		read_dinputs( dinputs, false );
+    		read_counters( counters, false );
     	}
-    	xprintf_P(PSTR("DINPUTS: din0: count=%d,dT=%d, din1: count=%d,dT=%d\r\n"), dinputs[0].pulse_counter, dinputs[0].pulse_width, dinputs[1].pulse_counter, dinputs[0].pulse_width );
+    	xprintf_P(PSTR("COUNTERS: cnt0: count=%d,dT=%d, cnt1: count=%d,dT=%d\r\n"), counters[0].pulse_counter, counters[0].pulse_width, counters[1].pulse_counter, counters[0].pulse_width );
     	pv_snprintfP_OK();
     	return;
     }
@@ -438,8 +463,36 @@ dinputs_t dinputs[2];
 static void cmdConfigFunction(void)
 {
 
+bool retS = false;
 
     FRTOS_CMD_makeArgv();
+
+	// DLGID
+	if (!strcmp_P( strupr(argv[1]), PSTR("DLGID\0"))) {
+		if ( argv[2] == NULL ) {
+			retS = false;
+			} else {
+				memcpy(systemVars.dlgid, argv[2], sizeof(systemVars.dlgid));
+				systemVars.dlgid[DLGID_LENGTH - 1] = '\0';
+				retS = true;
+			}
+		retS ? pv_snprintfP_OK() : 	pv_snprintfP_ERR();
+		return;
+	}
+
+	// config analog {0..2} aname imin imax mmin mmax
+	if (!strcmp_P( strupr(argv[1]), PSTR("ANALOG")) ) {
+		retS = config_analog_channel( atoi(argv[2]), argv[3], argv[4], argv[5], argv[6], argv[7] );
+		retS ? pv_snprintfP_OK() : pv_snprintfP_ERR();
+		return;
+	}
+
+	// config counter {0..1} cname magPP
+	if (!strcmp_P( strupr(argv[1]), PSTR("COUNTER")) ) {
+		retS = config_counters_channel( atoi(argv[2]), argv[3], argv[4] );
+		retS ? pv_snprintfP_OK() : pv_snprintfP_ERR();
+		return;
+	}
 
     // config default
 	if (!strcmp_P( strupr(argv[1]), PSTR("DEFAULT")) ) {
@@ -472,12 +525,12 @@ static void cmdConfigFunction(void)
 	// config debugDin on,off
 	if (!strcmp_P( strupr(argv[1]), PSTR("DEBUGDIN")) ) {
 		if (!strcmp_P( strupr(argv[2]), PSTR("ON")) ) {
-			config_debug_din(true);
+			config_debug_counters(true);
 			pv_snprintfP_OK();
 			return;
 		}
 		if (!strcmp_P( strupr(argv[2]), PSTR("OFF")) ) {
-			config_debug_din(false);
+			config_debug_counters(false);
 			pv_snprintfP_OK();
 			return;
 		}

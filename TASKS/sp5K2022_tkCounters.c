@@ -22,18 +22,15 @@
 
 #include "sp5K2022.h"
 
-#define NRO_DINPUTS	2
+counters_t counters[2];
 
+bool debug_counters;
 
-dinputs_t dinputs[2];
-
-bool debug_din;
-
-void pv_dinputs_init(void);
-void pv_dinputs_count_pulses(void);
+void pv_counters_init(void);
+void pv_counters_count_pulses(void);
 
 //------------------------------------------------------------------------------
-void tkDinputs(void * pvParameters)
+void tkCounters(void * pvParameters)
 {
 
 	// Esta es la primer tarea que arranca.
@@ -44,11 +41,11 @@ TickType_t xLastWakeTime = 0;
 	while (! starting_flag )
 		vTaskDelay( ( TickType_t)( 100 / portTICK_PERIOD_MS ) );
 
-	xprintf("Starting tkDinputs...\r\n");
-	pv_dinputs_init();
+	xprintf("Starting tkCounters...\r\n");
+	pv_counters_init();
 	LATCH0_CLR_init();
 	LATCH1_CLR_init();
-	debug_din = false;
+	debug_counters = false;
 
 	// Initialise the xLastWakeTime variable with the current time.
  	xLastWakeTime = xTaskGetTickCount();
@@ -58,32 +55,32 @@ TickType_t xLastWakeTime = 0;
   		// Espero 100 ms.
   		vTaskDelayUntil( &xLastWakeTime, ( TickType_t)( 100 / portTICK_PERIOD_MS ) );
 
-  		pv_dinputs_count_pulses();
+  		pv_counters_count_pulses();
 	}
 }
 //------------------------------------------------------------------------------
-void read_dinputs( dinputs_t *dvals, bool clear )
+read_counters( counters_t *cntvals, bool clear )
 {
 
 uint8_t i;
 
 	//while ( xSemaphoreTake( sem_SYSVars, ( TickType_t ) 5 ) != pdTRUE )
 	//	vTaskDelay( ( TickType_t)( 1 ) );
-	memcpy( dvals, dinputs, sizeof(dinputs));
+	memcpy( cntvals, counters, sizeof(counters));
 	//xSemaphoreGive( sem_SYSVars );
 
 	if ( clear ) {
-		for (i=0; i<NRO_DINPUTS; i++) {
-			dinputs[i].pulse_counter = 0;
-			dinputs[i].cticks = 0;
+		for (i=0; i<COUNTER_CHANNELS; i++) {
+			counters[i].pulse_counter = 0;
+			counters[i].cticks = 0;
 		}
 	}
 
 }
 //------------------------------------------------------------------------------
-void config_debug_din(bool val)
+void config_debug_counters(bool val)
 {
-	debug_din = val;
+	debug_counters = val;
 }
 //------------------------------------------------------------------------------
 void clear_latches(void)
@@ -97,7 +94,7 @@ void clear_latches(void)
 
 }
 //------------------------------------------------------------------------------
-void pv_dinputs_count_pulses(void)
+void pv_counters_count_pulses(void)
 {
 	/*
 	 * Cuenta los pulsos y resetea los latches.
@@ -110,25 +107,25 @@ uint8_t din0, din1;
 		return;
 	}
 
-	dinputs[0].cticks++;
-	dinputs[1].cticks++;
+	counters[0].cticks++;
+	counters[1].cticks++;
 
 	// Acumulo pulsos.
 	if ( din0 == 0 ) {
-		dinputs[0].pulse_counter++;
-		dinputs[0].pulse_width = dinputs[0].cticks;
-		dinputs[0].cticks = 0;
-		if (debug_din) {
-			xprintf_P(PSTR("DINPUTS: din0(*): count=%d,dT=%d, din1: count=%d,dT=%d\r\n"), dinputs[0].pulse_counter, dinputs[0].pulse_width, dinputs[1].pulse_counter, dinputs[0].pulse_width );
+		counters[0].pulse_counter++;
+		counters[0].pulse_width = counters[0].cticks;
+		counters[0].cticks = 0;
+		if (debug_counters) {
+			xprintf_P(PSTR("COUNTER: cnt0(*): count=%d,dT=%d, din1: count=%d,dT=%d\r\n"), counters[0].pulse_counter, counters[0].pulse_width, counters[1].pulse_counter, counters[0].pulse_width );
 		}
 	}
 
 	if ( din1 == 0 ) {
-		dinputs[1].pulse_counter++;
-		dinputs[1].pulse_width = dinputs[1].cticks;
-		dinputs[1].cticks = 0;
-		if (debug_din) {
-			xprintf_P(PSTR("DINPUTS: din0: count=%d,dT=%d, din1(*): count=%d,dT=%d\r\n"), dinputs[0].pulse_counter, dinputs[0].pulse_width, dinputs[1].pulse_counter, dinputs[0].pulse_width );
+		counters[1].pulse_counter++;
+		counters[1].pulse_width = counters[1].cticks;
+		counters[1].cticks = 0;
+		if (debug_counters) {
+			xprintf_P(PSTR("DINPUTS: din0: count=%d,dT=%d, din1(*): count=%d,dT=%d\r\n"), counters[0].pulse_counter, counters[0].pulse_width, counters[1].pulse_counter, counters[0].pulse_width );
 		}
 	}
 
@@ -136,14 +133,14 @@ uint8_t din0, din1;
 
 }
 //------------------------------------------------------------------------------
-void pv_dinputs_init(void)
+void pv_counters_init(void)
 {
 uint8_t i;
 
-	for (i=0; i<NRO_DINPUTS; i++) {
-		dinputs[i].pulse_counter = 0;
-		dinputs[i].cticks = 0;
-		dinputs[i].pulse_width = 0;
+	for (i=0; i<COUNTER_CHANNELS; i++) {
+		counters[i].pulse_counter = 0;
+		counters[i].cticks = 0;
+		counters[i].pulse_width = 0;
 	}
 }
 //------------------------------------------------------------------------------
